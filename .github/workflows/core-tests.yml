@@ -1,4 +1,4 @@
-name: Core test
+name: Run Tests
 
 on:
   push:
@@ -10,26 +10,28 @@ on:
 
 jobs:
   test:
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-latest
+
     strategy:
       matrix:
-        python-version: ['3.8.18', '3.9.20', '3.10.15']
+        python-version: [3.7, 3.8, 3.9, 3.10]
 
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
+    - name: Check out code
+      uses: actions/checkout@v3
 
-      - name: Setup Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: ${{ matrix.python-version }}
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v4
+      with:
+        python-version: ${{ matrix.python-version }}
 
-      - name: Install the package
-        run: |
-          python -m pip install --upgrade pip
-          pip install .
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install pytest
+        python -m pip install .
 
-      - name: Run tests
-        run: |
-          pytest
+    - name: Run tests
+      run: |
+        pytest
 
