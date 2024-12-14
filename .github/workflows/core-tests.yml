@@ -35,8 +35,11 @@ jobs:
     - name: Install maturin
       run: pip install maturin
 
-    - name: Build and install the package (development mode)
-      run: maturin develop
+    - name: Build the package
+      run: maturin build --release
+
+    - name: Install the package
+      run: pip install target/wheels/*.whl
 
     - name: Install additional test dependencies
       run: pip install pytest numpy matplotlib tqdm networkx
