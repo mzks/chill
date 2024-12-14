@@ -25,12 +25,22 @@ jobs:
       with:
         python-version: ${{ matrix.python-version }}
 
-    - name: Install dependencies
-      run: |
-        python -m pip install --upgrade pip setuptools
-        pip install . --use-feature=in-tree-build
+    - name: Set up Rust
+      uses: actions-rs/toolchain@v1
+      with:
+        profile: minimal
+        toolchain: stable
+        override: true
+
+    - name: Install maturin
+      run: pip install maturin
+
+    - name: Build and install the package (development mode)
+      run: maturin develop
+
+    - name: Install additional test dependencies
+      run: pip install pytest numpy matplotlib tqdm networkx
 
     - name: Run tests
-      run: |
-        pytest --maxfail=5 --disable-warnings
+      run: pytest --maxfail=5 --disable-warnings
 
