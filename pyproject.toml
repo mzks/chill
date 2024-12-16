@@ -1,3 +1,38 @@
 [build-system]
 requires = ["maturin>=0.14"]
 build-backend = "maturin"
+
+[project]
+name = "chill"
+version = "0.3.0"
+description = "Calculator of Heat Iterative Linear Logic"
+readme = "README.md"
+license = {text = "MIT"}
+authors = [
+    {name = "Keita Mizukoshi", email = "mizukoshi.keita@jaxa.jp"}
+]
+requires-python = ">=3.7"
+dependencies = [
+    "numpy",
+    "matplotlib",
+    "tqdm",
+    "thermo",
+    "networkx",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest",
+    "black",
+    "flake8",
+    "mypy",
+    "numpy",
+    "matplotlib",
+    "tqdm",
+    "thermo",
+    "networkx",
+]
+
+[tool.maturin]
+bindings = "pyo3"
+
