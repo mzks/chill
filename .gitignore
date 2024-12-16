@@ -151,4 +151,5 @@ dmypy.json
 # Pyre type checker
 .pyre/
 
-
+# notebook
+*.ipynb

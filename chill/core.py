@@ -1,9 +1,12 @@
 import numpy as np
 from dataclasses import dataclass
 from typing import List, Tuple, Dict
+from thermo import Chemical
+from tqdm import tqdm
 from .chill import process
+from .constants import *
 
-@dataclass
+@dataclass(frozen=True)
 class Node:
     """
     Represents a node in the thermal simulation.
@@ -17,7 +20,7 @@ class Node:
     capacity: float = 100.0      # [K/J]
     name: str = ''
 
-@dataclass
+@dataclass(frozen=True)
 class Edge:
     """
     Represents an edge between two nodes in the thermal simulation.
@@ -110,6 +113,25 @@ class Chill:
         if node is None:
             raise ValueError(f"Node with name '{name}' not found.")
         return node
+    def define_object(self, material_name, temperature, volume, pressure=atm, name=''):
+        """
+        Defines a thermal node representing a specific object with given material properties.
+        
+        Args:
+            material_name (str): The name of the material (must be supported by the `thermo` library).
+            temperature (float): Initial temperature of the object.
+            volume (float): Volume of the object, used to calculate its specific heat capacity.
+            pressure (float, optional): Pressure of the system. Defaults to standard atmospheric pressure.
+            name (str): The name used for the node name
+
+        Returns:
+            None
+        """
+        material = Chemical(material_name, T=temperature, P=pressure)
+        capacity = material.rho * volume * material.Cp
+        if name=='':
+            name = material_name
+        return self.define_node(temperature, capacity, name=name)
 
     def define_thermal_conduction(self, node0: Node, node1: Node, conductance: float, name: str = '') -> None:
         """
@@ -184,10 +206,27 @@ class Chill:
             node_name1 (str): Name of the second node.
             heat_input (float): Amount of heat input.
             name (str, optional): Name of the edge. Defaults to an empty string.
+        return:
+            Node: The created node object.
         """
         node0 = self.find_node(node_name0)
         node1 = self.find_node(node_name1)
         self.define_thermal_input(node0, node1, heat_input, name=name)
+
+    def define_heater(self, target_node, heat_input):
+        """
+        Defines a heater connected to the specified target node, simulating a constant heat input.
+    
+        Args:
+            target_node (Node): The node to which the heater is connected.
+            heat_input (float): The amount of heat input provided by the heater.
+    
+        Returns:
+            Node : The created node object (heater).
+        """
+        node = self.define_node(temperature=300*K, capacity=np.inf)
+        self.define_thermal_input(node, target_node, heat_input)
+        return node
 
     def setup(self) -> None:
         """
@@ -259,6 +298,6 @@ class Chill:
         steps_per_interval = int(record_interval / self.dt)
         total_steps = int(total_time / self.dt)
         num_intervals = total_steps // steps_per_interval
-        for _ in range(num_intervals):
+        for _ in tqdm(range(num_intervals)):
             self.run(steps=steps_per_interval)
             self.record_data()
