@@ -1,6 +1,8 @@
 import numpy as np
+import matplotlib.pyplot as plt
+from matplotlib.figure import Figure
 from dataclasses import dataclass
-from typing import List, Tuple, Dict
+from typing import List, Tuple, Dict, Optional
 from thermo import Chemical
 from tqdm import tqdm
 from .chill import process
@@ -301,3 +303,42 @@ class Chill:
         for _ in tqdm(range(num_intervals)):
             self.run(steps=steps_per_interval)
             self.record_data()
+
+    def plot_top_temperature_changes(self, top_n: int = 5, figure_size: Optional[Tuple[int, int]] = (10, 6)) -> Figure:
+        """
+        Plots the temperature changes of the top N nodes with the most significant temperature variations over time.
+
+        Args:
+            top_n (int): The number of top nodes to plot based on temperature change. Defaults to 5.
+            figure_size (Tuple[int, int], optional): Size of the figure in inches. Defaults to (10, 6).
+
+        Returns:
+            matplotlib.figure.Figure: The matplotlib figure object containing the plot.
+        """
+        temperature_history = np.array(self.temperatures_history, dtype=np.float64)
+
+        initial_temperatures = temperature_history[0, :]
+        final_temperatures = temperature_history[-1, :]
+        temperature_differences = np.abs(final_temperatures - initial_temperatures)
+
+        # Get indices of the top N nodes with the highest temperature change
+        sorted_node_indices = np.argsort(temperature_differences)[::-1]  # Descending order
+        selected_node_indices = sorted_node_indices[:top_n] if top_n < len(sorted_node_indices) else sorted_node_indices
+
+        time_points = self.times_history
+
+        # Create the plot
+        figure, axis = plt.subplots(figsize=figure_size)
+
+        for node_index in selected_node_indices:
+            node_name = self.nodes[node_index].name
+            axis.plot(time_points, temperature_history[:, node_index], label=node_name)
+
+        # Enhance plot aesthetics
+        axis.set_title('Top Temperature Changes during simulation')
+        axis.set_xlabel('Time [s]')
+        axis.set_ylabel('Temperature [K]')
+        axis.legend()
+        plt.tight_layout()
+        plt.close(figure)
+        return figure
