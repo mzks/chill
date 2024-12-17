@@ -115,6 +115,19 @@ class Chill:
         if node is None:
             raise ValueError(f"Node with name '{name}' not found.")
         return node
+
+    def find_node_indices_by_name(self, name) -> List[int]:
+        """
+        Find node index by the node name
+
+        Args:
+            name (str): Node name
+
+        Returns:
+            list: The node index list
+        """
+        return [ index for index, node in enumerate(self.nodes) if name in node.name ]
+
     def define_object(self, material_name, temperature, volume, pressure=atm, name=''):
         """
         Defines a thermal node representing a specific object with given material properties.
@@ -304,6 +317,7 @@ class Chill:
             self.run(steps=steps_per_interval)
             self.record_data()
 
+
     def plot_top_temperature_changes(self, top_n: int = 5, figure_size: Optional[Tuple[int, int]] = (10, 6)) -> Figure:
         """
         Plots the temperature changes of the top N nodes with the most significant temperature variations over time.
@@ -342,3 +356,61 @@ class Chill:
         plt.tight_layout()
         plt.close(figure)
         return figure
+
+    def plot_node_temperature_by_name(self, name: str, figure_size: Optional[Tuple[int, int]] = (10, 6)) -> Figure:
+        """
+        Plots the temperature changes of the node by the name
+
+        Args:
+            name (str): Node name to plot
+            figure_size (Tuple[int, int], optional): Size of the figure in inches. Defaults to (10, 6).
+
+        Returns:
+            matplotlib.figure.Figure: The matplotlib figure object containing the plot.
+        """
+        temperature_history = np.array(self.temperatures_history, dtype=np.float64)
+        time_points = self.times_history
+
+        # Create the plot
+        figure, axis = plt.subplots(figsize=figure_size)
+
+        for node_index in self.find_node_indices_by_name(name) :
+            node_name = self.nodes[node_index].name
+            axis.plot(time_points, temperature_history[:,node_index], label=node_name)
+
+        axis.set_xlabel('Time [s]')
+        axis.set_ylabel('Temperature [K]')
+        axis.legend()
+        plt.tight_layout()
+        plt.close(figure)
+        return figure
+
+    def plot_node_temperature_by_names(self, names: List[str], figure_size: Optional[Tuple[int, int]] = (10, 6)) -> Figure:
+        """
+        Plots the temperature changes of the nodes by the names
+
+        Args:
+            names (List[str]): Node names to plot
+            figure_size (Tuple[int, int], optional): Size of the figure in inches. Defaults to (10, 6).
+
+        Returns:
+            matplotlib.figure.Figure: The matplotlib figure object containing the plot.
+        """
+        temperature_history = np.array(self.temperatures_history, dtype=np.float64)
+        time_points = self.times_history
+
+        # Create the plot
+        figure, axis = plt.subplots(figsize=figure_size)
+
+        for name in names:
+            for node_index in self.find_node_indices_by_name(name) :
+                node_name = self.nodes[node_index].name
+                axis.plot(time_points, temperature_history[:,node_index], label=node_name)
+
+        axis.set_xlabel('Time [s]')
+        axis.set_ylabel('Temperature [K]')
+        axis.legend()
+        plt.tight_layout()
+        plt.close(figure)
+        return figure
+
