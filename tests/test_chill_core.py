@@ -28,6 +28,3 @@ def test_simple_heat_transfer():
     assert abs(c.temperatures[0] - c.temperatures[1]) < 1.e-3
     assert abs(c.temperatures[1] - c.temperatures[2]) < 1.e-3
 
-
-def test_transfer_and_radiation():
-    c = Chill()
