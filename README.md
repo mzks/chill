@@ -19,3 +19,4 @@ python -m pip install git+https://github.com/mzks/chill
 
 ## Usage
 See jupyter notebooks in examples.
+ - Simple performance check [link](https://colab.research.google.com/drive/1W89IJkS3_imp3bdVHR_I88SvQhOim6d3?usp=sharing)
