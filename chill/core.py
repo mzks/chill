@@ -1,14 +1,17 @@
 import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.figure import Figure
+import matplotlib.cm as colormap
+import matplotlib.colors as mcolors
 from dataclasses import dataclass
 from typing import List, Tuple, Dict, Optional
 from thermo import Chemical
 from tqdm import tqdm
+import networkx as nx
 from .chill import process
 from .constants import *
 
-@dataclass(frozen=True)
+@dataclass
 class Node:
     """
     Represents a node in the thermal simulation.
@@ -22,7 +25,7 @@ class Node:
     capacity: float = 100.0      # [K/J]
     name: str = ''
 
-@dataclass(frozen=True)
+@dataclass
 class Edge:
     """
     Represents an edge between two nodes in the thermal simulation.
@@ -414,3 +417,58 @@ class Chill:
         plt.close(figure)
         return figure
 
+    def update_node_temperature(self):
+        if len(self.temperatures_history) == 0:
+            return
+        for n, t in zip(self.nodes, self.temperatures_history[-1]):
+            n.temperature = t
+
+    def plot_network(self, figure_size: Optional[Tuple[int, int]] = (10, 6),
+                     vmin=None, vmax=None) -> Figure:
+        """
+        Plot the node and edge network
+
+        Args:
+            figure_size (Tuple[int, int], optional): Size of the figure in inches. Defaults to (10, 6).
+            vmin (float): Minimum temperature shown in the colorbar
+            vmax (float): Maximum temperature shown in the colorbar
+        Returns:
+            matplotlib.figure.Figure: The matplotlib figure object containing the plot.
+        """
+
+        self.update_node_temperature()
+        figure, axis = plt.subplots(figsize=figure_size)
+
+        G = nx.Graph()
+        for node in self.nodes:
+            G.add_node(node.name)
+        for edge in self.edges:
+            G.add_edge(edge.nodes[0].name, edge.nodes[1].name, label=f'{edge.parameter:.1e}')
+        cmap = colormap.plasma
+        temperatures = [node.temperature for node in self.nodes]
+        if vmin == None:
+            vmin = min(temperatures)
+        if vmax == None:
+            vmax = max(temperatures)
+        norm = mcolors.Normalize(vmin=vmin, vmax=vmax)
+
+        pos = nx.kamada_kawai_layout(G)
+        nx.draw_networkx_nodes(
+            G,
+            pos,
+            node_color=temperatures,
+            cmap=cmap,
+            node_size=300,
+            alpha=0.8,
+            ax=axis
+        )
+        nx.draw_networkx_labels(G, pos, ax=axis)
+        nx.draw_networkx_edges(G, pos, edge_color="gray", ax=axis)
+        edge_label_dict = nx.get_edge_attributes(G, "label")
+        nx.draw_networkx_edge_labels(G, pos, edge_labels=edge_label_dict, ax=axis)
+
+        sm = colormap.ScalarMappable(cmap=cmap, norm=norm)
+        sm.set_array([])
+        figure.colorbar(sm, label="Temperature [K]")
+        plt.close(figure)
+        return figure
